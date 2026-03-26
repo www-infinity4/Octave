@@ -7,6 +7,7 @@ from octave.protocol.message import OctaveMessage, MessageType
 from octave.protocol.codec import OctaveCodec
 from octave.token.token import OctaveToken, TokenState
 from octave.token.mint import TokenMint, MintPolicy
+from octave.web.server import OctaveWebServer
 
 __all__ = [
     # core — notes
@@ -22,4 +23,6 @@ __all__ = [
     "OctaveMessage", "MessageType", "OctaveCodec",
     # token
     "OctaveToken", "TokenState", "TokenMint", "MintPolicy",
+    # web
+    "OctaveWebServer",
 ]
