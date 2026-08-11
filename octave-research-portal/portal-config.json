@@ -1,0 +1,35 @@
+{
+  "portal": "OCTAVE_RESEARCH_PORTAL",
+  "version": 1,
+  "lineage": {
+    "recovered_ui": "infinity-ai-terminal.html",
+    "terminal_roles": {"i": "INPUT", "j": "OUTPUT", "k": "PORTAL"}
+  },
+  "research_streams": ["PROJECT_RESEARCH", "INFINITY_DISCOVERY_RESEARCH"],
+  "evidence_states": ["OBSERVED", "INFERRED", "EXTERNALLY_VERIFIED", "USER_DEFINED"],
+  "colors": {
+    "GREEN": "ENGINEER",
+    "BLUE": "IMPORT",
+    "YELLOW": "RESEARCH_EXTRACT",
+    "ORANGE": "DECIDE",
+    "RED": "ROUTE_FORK",
+    "PURPLE": "ASSIMILATE"
+  },
+  "novelty": {
+    "exclude_prior_query_hashes": true,
+    "exclude_prior_article_hashes": true,
+    "exclude_prior_source_set_hashes": true,
+    "use_profile": true,
+    "use_token_lineage": true,
+    "use_action_paths": true,
+    "use_rotating_cross_domain_term": true,
+    "user_direction_optional": true
+  },
+  "wallet": {
+    "authority": "www-infinity4/INFINITY",
+    "local_balance_authoritative": false
+  },
+  "action_tokens": true,
+  "canonical_history_immutable": true,
+  "profile_conditioned_rendering": true
+}
