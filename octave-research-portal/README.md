@@ -110,3 +110,22 @@ The browser must not contain GitHub write credentials.
 ## Repo split
 
 This folder is intentionally self-contained so it can be moved unchanged into a standalone `www-infinity4/Octave-Research-Portal` repository when repository-creation access is available.
+
+## Shared local research runtime
+
+The portal now uses `research-runtime.js` as its adapter to the shared Infinity loopback gateway at `http://127.0.0.1:11435` (overridable with `window.INFINITY_AI_BASE_URL`).
+
+- `REASONER` adds an optional local Gemma synthesis labeled `INFERRED`.
+- `TOOL_ROUTER` proposes the selected color action but always returns `executed: false`; the application must validate and execute it separately.
+- If the gateway is unavailable, Wikipedia/Wikidata source retrieval and the deterministic two-stream summary remain usable.
+- Captured source URLs are stored separately from model prose. A model response cannot promote itself to `EXTERNALLY_VERIFIED`.
+
+Each research record computes canonical SHA-256 hashes for the normalized query, sorted source set, article, token lineage, and user path. The local catalog marks a repeated query/source/article as `DUPLICATE` and retains the earlier record ID. FNV hashes remain only for legacy UI compatibility; they are not the durable novelty identity.
+
+Verification:
+
+```sh
+cd octave-research-portal
+node --check research-runtime.js
+node test-research-runtime.js
+```

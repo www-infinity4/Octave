@@ -1,12 +1,24 @@
 {
   "portal": "OCTAVE_RESEARCH_PORTAL",
-  "version": 1,
+  "version": 2,
   "lineage": {
     "recovered_ui": "infinity-ai-terminal.html",
-    "terminal_roles": {"i": "INPUT", "j": "OUTPUT", "k": "PORTAL"}
+    "terminal_roles": {
+      "i": "INPUT",
+      "j": "OUTPUT",
+      "k": "PORTAL"
+    }
   },
-  "research_streams": ["PROJECT_RESEARCH", "INFINITY_DISCOVERY_RESEARCH"],
-  "evidence_states": ["OBSERVED", "INFERRED", "EXTERNALLY_VERIFIED", "USER_DEFINED"],
+  "research_streams": [
+    "PROJECT_RESEARCH",
+    "INFINITY_DISCOVERY_RESEARCH"
+  ],
+  "evidence_states": [
+    "OBSERVED",
+    "INFERRED",
+    "EXTERNALLY_VERIFIED",
+    "USER_DEFINED"
+  ],
   "colors": {
     "GREEN": "ENGINEER",
     "BLUE": "IMPORT",
@@ -23,7 +35,14 @@
     "use_token_lineage": true,
     "use_action_paths": true,
     "use_rotating_cross_domain_term": true,
-    "user_direction_optional": true
+    "user_direction_optional": true,
+    "hashes": [
+      "queryHash",
+      "sourceSetHash",
+      "articleHash",
+      "tokenLineageHash",
+      "userPathHash"
+    ]
   },
   "wallet": {
     "authority": "www-infinity4/INFINITY",
@@ -31,5 +50,17 @@
   },
   "action_tokens": true,
   "canonical_history_immutable": true,
-  "profile_conditioned_rendering": true
+  "profile_conditioned_rendering": true,
+  "runtime": {
+    "base_url": "http://127.0.0.1:11435",
+    "roles": [
+      "REASONER",
+      "TOOL_ROUTER"
+    ],
+    "deterministic_fallback": true,
+    "tool_execution": false,
+    "application_validation_required": true
+  },
+  "research_record_schema": "infinity/research-record/v1",
+  "novelty_schema": "infinity/research-novelty/v1"
 }

@@ -11,6 +11,7 @@
 <div id="main"><aside class="side"><div class="head">Knowledge Graph</div><div id="kg"></div><div class="head">Research State</div><div class="stat"><span>searches</span><span id="searches">0</span></div><div class="stat"><span>topics</span><span id="topics">0</span></div><div class="stat"><span>actions</span><span id="actions">0</span></div><div class="stat"><span>novelty</span><span id="novel">100%</span></div><div class="head">Search Log</div><div id="log"></div></aside>
 <main id="center"><div class="lanes"><button class="lane green" data-lane="GREEN">GREEN · ENGINEER</button><button class="lane blue" data-lane="BLUE">BLUE · IMPORT</button><button class="lane yellow" data-lane="YELLOW">YELLOW · RESEARCH</button><button class="lane orange" data-lane="ORANGE">ORANGE · DECIDE</button><button class="lane red" data-lane="RED">RED · ROUTE</button><button class="lane purple" data-lane="PURPLE">PURPLE · ASSIMILATE</button></div><div id="msgs"></div><div class="input"><span style="color:var(--cyan);padding-top:9px">O›</span><input id="q" placeholder="research a project, token, timeline, or type a color action..."><button class="action" id="random">RANDOM</button><button class="action" id="send">SEARCH</button></div></main>
 <aside class="side" id="right"><div class="head">Project Research</div><div id="project" class="stream project">Select or search a token/project.</div><div class="head">Infinity Discovery</div><div id="discovery" class="stream discovery">A cross-domain research path will be generated here.</div><div class="head">Novelty Engine</div><div id="novelty">profile + lineage + prior searches + action path + rotating realm → new query</div><div class="head">Selected Action</div><div id="plan" class="stream">No color action selected.</div></aside></div>
+<script src="research-runtime.js"></script>
 <script>
 (function(){'use strict';
 const $=s=>document.querySelector(s), KGKEY='octave.kg.v1', HIST='octave.history.v1', ACT='octave.actions.v1';
@@ -29,9 +30,45 @@ function novelty(base){let used=new Set(hist.map(x=>x.queryHash)), ks=words(base
 async function wiki(q){try{let r=await fetch('https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch='+encodeURIComponent(q)+'&format=json&origin=*&srlimit=2');let d=await r.json();return (d.query?.search||[]).map(x=>({src:'Wikipedia',title:x.title,text:x.snippet.replace(/<[^>]+>/g,''),url:'https://en.wikipedia.org/wiki/'+encodeURIComponent(x.title)}))}catch{return[]}}
 async function wd(q){try{let r=await fetch('https://www.wikidata.org/w/api.php?action=wbsearchentities&search='+encodeURIComponent(q)+'&language=en&format=json&origin=*&limit=2');let d=await r.json();return (d.search||[]).map(x=>({src:'Wikidata',title:x.label,text:x.description||'',url:'https://www.wikidata.org/wiki/'+x.id}))}catch{return[]}}
 function researchText(q,res){if(!res.length)return 'No free-source result returned. Keep the question as an open research item rather than inventing an answer.';return res.slice(0,3).map(x=>x.title+': '+x.text).join('\n\n')}
-async function run(raw,forceNovel=false){raw=raw.trim();if(!raw)return;add('user',raw);let nv=forceNovel?novelty(raw):novelty(raw), query=forceNovel?nv.q:raw;$('#state').textContent='SEARCHING';let rs=(await Promise.all([wiki(query),wd(query)])).flat();let body=researchText(query,rs);let conf=Math.min(1,.45+rs.length*.12);kg[query.toLowerCase().slice(0,45)]={s:body.slice(0,280),c:conf};hist.push({at:new Date().toISOString(),input:raw,query,queryHash:hash(query),realm:nv.realm,sources:rs.map(x=>x.url)});localStorage.setItem(KGKEY,JSON.stringify(kg));localStorage.setItem(HIST,JSON.stringify(hist));$('#project').textContent='PROJECT_RESEARCH\n'+body;let disc=novelty(query+' '+nv.realm);$('#discovery').textContent='INFINITY_DISCOVERY_RESEARCH · EXPLORATORY_LINK\nNext realm: '+disc.realm+'\nSuggested query: '+disc.q;add('ai','PROJECT_RESEARCH\n'+body+'\n\nINFINITY_DISCOVERY_RESEARCH\nExplore '+disc.realm+': '+disc.q,rs);$('#state').textContent=conf>.8?'ANALYTICAL':conf>.65?'INFORMED':'REASONING';render()}
+async function run(raw,forceNovel=false){
+  raw=raw.trim();if(!raw)return;add('user',raw);
+  let nv=novelty(raw),query=forceNovel?nv.q:raw;
+  $('#state').textContent='SEARCHING';
+  let rs=(await Promise.all([wiki(query),wd(query)])).flat();
+  let body=researchText(query,rs),conf=Math.min(1,.45+rs.length*.12);
+  let disc=novelty(query+' '+nv.realm);
+  let discoveryBody='Next realm: '+disc.realm+'\nSuggested query: '+disc.q;
+  let record=await window.OctaveResearchRuntime.buildRecord({
+    query,projectBody:body,discoveryBody,
+    sources:rs,tokenLineage:hist.map(item=>item.recordId).filter(Boolean).slice(-12),
+    userPath:[raw,...words(raw)]
+  });
+  kg[query.toLowerCase().slice(0,45)]={s:body.slice(0,280),c:conf};
+  hist.push({
+    at:new Date().toISOString(),input:raw,query,queryHash:record.novelty.queryHash,
+    articleHash:record.novelty.articleHash,sourceSetHash:record.novelty.sourceSetHash,
+    recordId:record.recordId,novelty:record.novelty,runtime:record.runtime.status,
+    realm:nv.realm,sources:rs.map(x=>x.url)
+  });
+  localStorage.setItem(KGKEY,JSON.stringify(kg));localStorage.setItem(HIST,JSON.stringify(hist));
+  $('#project').textContent='PROJECT_RESEARCH · INFERRED\n'+body+
+    (record.runtime.output?'\n\nLOCAL GEMMA · INFERRED\n'+record.runtime.output:'\n\nLOCAL GEMMA OFFLINE · deterministic source summary retained');
+  $('#discovery').textContent='INFINITY_DISCOVERY_RESEARCH · INFERRED · EXPLORATORY_LINK\n'+discoveryBody;
+  $('#novelty').textContent=record.novelty.status+'\nquery '+record.novelty.queryHash.slice(0,16)+'…\narticle '+record.novelty.articleHash.slice(0,16)+'…\nsources '+(record.novelty.sourceSetHash||'none').slice(0,16)+'…';
+  add('ai','PROJECT_RESEARCH · INFERRED\n'+body+'\n\nINFINITY_DISCOVERY_RESEARCH · INFERRED\nExplore '+disc.realm+': '+disc.q,rs);
+  $('#state').textContent=record.novelty.status==='DUPLICATE'?'DUPLICATE':conf>.8?'ANALYTICAL':conf>.65?'INFORMED':'REASONING';render();
+}
 function render(){let e=Object.entries(kg).slice(-8).reverse();$('#kg').innerHTML=e.map(([k,v])=>'<div class="kg"><b>'+k+'</b><br>'+Math.round(v.c*100)+'% · '+v.s.slice(0,75)+'</div>').join('');$('#searches').textContent=hist.length;$('#topics').textContent=Object.keys(kg).length;$('#actions').textContent=acts.length;let unique=new Set(hist.map(x=>x.queryHash)).size;$('#novel').textContent=(hist.length?Math.round(unique/hist.length*100):100)+'%';$('#log').innerHTML=hist.slice(-10).reverse().map(x=>'› '+x.query.slice(0,32)).join('<br>')}
-$('.lanes').addEventListener('click',e=>{if(!e.target.dataset.lane)return;let lane=e.target.dataset.lane, source=$('#q').value.trim()||hist.at(-1)?.query||'current token', verbs={GREEN:'ENGINEER',BLUE:'IMPORT',YELLOW:'RESEARCH / EXTRACT',ORANGE:'DECIDE',RED:'ROUTE / FORK',PURPLE:'ASSIMILATE'};let nv=novelty(source+' '+verbs[lane]);let a={id:crypto.randomUUID?crypto.randomUUID():Date.now(),at:new Date().toISOString(),lane,source,targetQuery:nv.q};acts.push(a);localStorage.setItem(ACT,JSON.stringify(acts));$('#plan').textContent=lane+' · '+verbs[lane]+'\nA: '+source+'\nB/search path: '+nv.q+'\nThis is a local Action Token proposal until synchronized with the shared INFINITY ledger.';render()});
+$('.lanes').addEventListener('click',async e=>{
+  if(!e.target.dataset.lane)return;
+  let lane=e.target.dataset.lane,source=$('#q').value.trim()||hist.at(-1)?.query||'current token';
+  let verbs={GREEN:'ENGINEER',BLUE:'IMPORT',YELLOW:'RESEARCH / EXTRACT',ORANGE:'DECIDE',RED:'ROUTE / FORK',PURPLE:'ASSIMILATE'};
+  let nv=novelty(source+' '+verbs[lane]);
+  let route=await window.OctaveResearchRuntime.proposeAction(lane,source,nv.q);
+  let a={id:crypto.randomUUID?crypto.randomUUID():Date.now(),at:new Date().toISOString(),lane,source,targetQuery:nv.q,toolProposal:route};
+  acts.push(a);localStorage.setItem(ACT,JSON.stringify(acts));
+  $('#plan').textContent=lane+' · '+verbs[lane]+'\nA: '+source+'\nB/search path: '+nv.q+'\nTool: '+route.proposal.name+'\nExecuted: false\nApplication validation is required before any action.';render();
+});
 $('#send').onclick=()=>{let v=$('#q').value;$('#q').value='';run(v,false)};$('#random').onclick=()=>{let base=$('#q').value.trim()||Object.keys(kg).at(-1)||'Infinity research';$('#q').value='';run(base,true)};$('#q').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#send').click()}});
 render();add('ai','Octave Research Portal online. Restored from the Infinity AI terminal lineage.\n\nUse ordinary research queries or select a color action. RANDOM generates a new cross-domain research combination while preserving sourced evidence separately from inference.');
 })();
