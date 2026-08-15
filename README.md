@@ -170,3 +170,4 @@ chord = Chord(notes=[Note.from_str(n) for n in ["C4", "E4", "G4"]])
 chord_bytes = codec.encode_chord(chord)
 decoded_chord = codec.decode_chord(chord_bytes)
 ```
+<script src="https://www-infinity4.github.io/Mint-For-Infinity/infinity-wallet-menu.js" defer></script>
